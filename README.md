@@ -31,6 +31,39 @@ AdbWatcher/
 
 ## 快速启动
 
+### 0. 前提条件：安装 ADB (Android Debug Bridge)
+
+在运行 ADB Watcher 之前，您需要在您的计算机（运行后端服务的机器）上安装 Android Debug Bridge (ADB) 命令行工具。ADB Watcher 后端服务会使用此工具与您的 Android 设备进行通信。
+
+**安装方法:**
+
+- **Linux:**
+  ```bash
+  # Debian/Ubuntu
+  sudo apt update
+  sudo apt install android-tools-adb
+
+  # Fedora
+  sudo dnf install android-tools
+
+  # Arch Linux
+  sudo pacman -S android-tools
+  ```
+  (请根据您的 Linux 发行版选择合适的命令)
+
+- **macOS:**
+  通常可以通过 Homebrew 安装:
+  ```bash
+  brew install --cask android-platform-tools
+  ```
+
+- **Windows:**
+  从官方 Android 开发者网站下载 SDK Platform Tools:
+  [https://developer.android.com/studio/releases/platform-tools](https://developer.android.com/studio/releases/platform-tools)
+  下载后解压，并将 `platform-tools` 目录添加到系统的 `PATH` 环境变量中。
+
+安装完成后，请打开终端或命令提示符，输入 `adb version` 并回车，确保 ADB 已正确安装并可以运行。
+
 ### 1. 安装依赖
 
 #### 后端
