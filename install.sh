@@ -64,12 +64,15 @@ check_and_install_adb
 
 echo "[3/7] 安装Python依赖..."
 pip3 install --upgrade pip
-pip3 install -r requirements.txt
+if [ -f "requirements.txt" ]; then
+  pip3 install -r requirements.txt
+else
+  echo "警告: requirements.txt 文件不存在，跳过 Python 依赖安装"
+fi
 
-echo "[4/7] 安装前端依赖并构建..."
+echo "[4/7] 安装前端依赖..."
 cd frontend
 npm install
-npm run build
 cd "$WORKDIR"
 
 # 5. 生成并安装 systemd 服务 (如果系统支持 systemctl)
@@ -94,18 +97,20 @@ WantedBy=multi-user.target
 EOF
 
   sudo systemctl daemon-reload
-  sudo systemctl enable adbwacher.service
-  sudo systemctl restart adbwacher.service
+  sudo systemctl enable adbwatcher.service
+  sudo systemctl restart adbwatcher.service
 
   echo "[6/7] systemd 服务已启动并设置为开机自启。"
   echo "[7/7] 部署完成！"
-  echo "可通过 systemctl status adbwacher.service 查看服务状态。"
+  echo "可通过 systemctl status adbwatcher.service 查看服务状态。"
 else
   echo "[5/7] 未检测到 systemctl (或非 Linux 系统)，跳过 systemd 服务安装。"
   echo "您可以手动运行 'python3 $WORKDIR/run_app.py' 来启动应用。"
   echo "[6/7] 部署完成 (无 systemd 服务)。"
-  # 清理最后一步的计数，因为总步骤减少了
-  echo "[7/7] " 
+  echo "[7/7] 安装完成！" 
 fi
 
-echo "前端请访问 http://<您的IP或localhost>:7708" 
+echo ""
+echo "🎉 安装完成！"
+echo "📱 前端访问地址: http://<您的IP或localhost>:7708"
+echo "🔧 请参考 README.md 进行配置" 

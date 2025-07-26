@@ -12,7 +12,21 @@ ADB Watcher 是一个专门为多珀播放器设计的海报墙监控工具。�
 
 ## 快速开始
 
-### 第一步：安装 ADB 工具
+### 一键安装（推荐 Linux/macOS 用户）
+
+在终端中运行以下命令自动完成依赖安装和初始化：
+
+```bash
+bash install.sh
+```
+
+脚本会自动检测并安装所需依赖（Python、Node.js、ADB等），并初始化前后端环境。
+
+---
+
+### 手动安装步骤
+
+#### 第一步：安装 ADB 工具
 
 ADB Watcher 需要通过 ADB 与您的多珀播放器通信。请先安装 ADB 工具：
 
@@ -66,7 +80,7 @@ sudo yum install android-tools
 - 配置通知服务器IP地址（即BlurayPoster运行主机的IP地址）
 - 配置路径映射
 
-**配置完成请重新 python run_app.py 重启程序**
+**配置完成运行 python run_app.py 重启程序**
 
 ## 路径映射配置说明
 
@@ -77,14 +91,18 @@ sudo yum install android-tools
 一般来说有如下规律：
 
 ### 如果播放的是SMB共享
+
 在多珀海报墙中的源播放地址：
 content://com.doopoodigital.video.app/camera_photos/data/data/doopooexplorer/samba/<nas_ip>#<nas_share_name>/<path>/
+
 在多珀文件管理器中的源播放地址为：
 content://com.doopoodigital.file.app.fileProvider/root_path/data/data/doopooexplorer/samba/<nas_ip>#<nas_share_name>/<path>/
 
 ### 如果播放的是多珀本地硬盘文件或者本地CD2挂载
+
 在多珀海报墙中的源播放地址：
 content://com.doopoodigital.video.app/camera_photos/storage/emulated/0/<path>/
+
 在多珀文件管理器中的源播放地址为：
 content://com.doopoodigital.file.app.fileProvider/externalstorage/<path>/
 
