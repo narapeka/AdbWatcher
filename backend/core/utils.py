@@ -34,19 +34,20 @@ def send_http_notification(endpoint, file_path, timeout=10, device_ip=None):
             timeout=timeout
         )
         
+        # Log the notification result
         if response.status_code >= 200 and response.status_code < 300:
             logger.info(f"Successfully sent notification for {file_path}")
             logger.debug(f"Response: {response.status_code} {response.text}")
-            
-            # After successful notification, call the additional API
-            if device_ip:
-                send_stop_key_request(device_ip)
-            
-            return True
         else:
             logger.error(f"Failed to send notification: HTTP {response.status_code}")
             logger.debug(f"Response: {response.text}")
-            return False
+        
+        # Execute send_stop_key_request for all cases except HTTP 503
+        if device_ip and response.status_code != 503:
+            send_stop_key_request(device_ip)
+        
+        # Return success for all cases except HTTP 503
+        return response.status_code != 503
             
     except Exception as e:
         logger.error(f"Error sending notification: {str(e)}")
