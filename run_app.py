@@ -24,7 +24,7 @@ def run_backend():
     try:
         # Use a direct subprocess call to run uvicorn
         uvicorn_cmd = ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7700"]
-        subprocess.run(uvicorn_cmd, check=True)
+        subprocess.run(uvicorn_cmd, check=True, text=True, encoding='utf-8', errors='replace')
     except KeyboardInterrupt:
         logger.info("Backend server stopped")
     except Exception as e:
@@ -52,7 +52,7 @@ def run_frontend():
         npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
         
         # Run npm run dev
-        subprocess.run([npm_cmd, "run", "dev"], check=True)
+        subprocess.run([npm_cmd, "run", "dev"], check=True, text=True, encoding='utf-8', errors='replace')
     except KeyboardInterrupt:
         logger.info("Frontend server stopped")
     except FileNotFoundError as e:

@@ -6,13 +6,14 @@ from backend.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-def send_http_notification(endpoint, file_path, timeout=10):
+def send_http_notification(endpoint, file_path, timeout=10, device_ip=None):
     """Send HTTP notification to the configured endpoint.
     
     Args:
         endpoint: The URL to send the notification to
         file_path: The file path to include in the notification
         timeout: Request timeout in seconds
+        device_ip: The device IP address for additional API call
         
     Returns:
         bool: True if notification was successful, False otherwise
@@ -36,6 +37,11 @@ def send_http_notification(endpoint, file_path, timeout=10):
         if response.status_code >= 200 and response.status_code < 300:
             logger.info(f"Successfully sent notification for {file_path}")
             logger.debug(f"Response: {response.status_code} {response.text}")
+            
+            # After successful notification, call the additional API
+            if device_ip:
+                send_stop_key_request(device_ip)
+            
             return True
         else:
             logger.error(f"Failed to send notification: HTTP {response.status_code}")
@@ -45,6 +51,25 @@ def send_http_notification(endpoint, file_path, timeout=10):
     except Exception as e:
         logger.error(f"Error sending notification: {str(e)}")
         return False
+
+def send_stop_key_request(device_ip):
+    """Send stop key request to the device after notification."""
+    try:
+        url = f"http://{device_ip}:9527/doopoo/sendKey?action=KEYCODE_MEDIA_STOP&from=any&keyValue=86"
+        headers = {'Content-Type': 'application/json'}
+        
+        logger.info(f"Sending stop key request to {url}")
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code >= 200 and response.status_code < 300:
+            logger.info(f"Successfully sent stop key request to {device_ip}")
+            logger.debug(f"Stop key response: {response.status_code} {response.text}")
+        else:
+            logger.error(f"Failed to send stop key request: HTTP {response.status_code}")
+            logger.debug(f"Stop key response: {response.text}")
+            
+    except Exception as e:
+        logger.error(f"Error sending stop key request to {device_ip}: {str(e)}")
 
 def extract_path_from_dat(dat_string, path_mappings=None):
     """Extracts the path portion from a 'dat=' URL string.

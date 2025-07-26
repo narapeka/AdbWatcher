@@ -1,137 +1,96 @@
-# ADB Watcher
+# ADB Watcher - 多珀播放器海报墙监控工具
 
-## 项目简介
+## 什么是 ADB Watcher？
 
-ADB Watcher 是一个用于监控 Android 设备活动的全栈应用。它通过 ADB（Android Debug Bridge）实时监听设备日志，并通过 Web 前端界面进行展示和配置。适用于需要自动化监控、事件通知和设备状态管理的场景。
+ADB Watcher 是一个专门为多珀播放器设计的海报墙监控工具。它能够实时监控您的多珀播放器，当您在播放器上点击播放电影或电视剧时，自动将媒体文件路径发送给蓝光机，实现一键播放功能。
 
-## 主要功能
+## 主要用途
 
-- **设备连接监控**：自动检测并维护与 Android 设备的 ADB 连接。
-- **日志实时采集**：后台服务自动拉取并分析设备 logcat 日志，支持事件过滤与去重。
-- **事件通知**：可配置事件触发后通过 HTTP 通知外部系统。
-- **Web 管理界面**：基于 Vue3 + Vuetify 的现代化前端，支持设备状态、日志、配置等可视化管理。
-- **配置灵活**：支持通过 YAML 文件和前端界面灵活配置监控参数、通知端点等。
+- **自动播放**：在多珀播放器上点击播放 → 蓝光机自动开始播放
+- **无缝体验**：无需手动操作蓝光机，享受流畅的观影体验
+- **实时监控**：24小时监控播放器状态，确保随时可用
 
-## 目录结构
+## 快速开始
 
-```
-AdbWatcher/
-├── backend/         # FastAPI 后端服务
-│   ├── main.py      # FastAPI 应用入口
-│   ├── services/    # 设备监控与ADB操作核心逻辑
-│   ├── routers/     # API 路由
-│   ├── core/        # 配置、日志、工具模块
-│   └── config/      # 配置文件
-├── frontend/        # Vue3 + Vite 前端项目
-│   └── src/         # 前端源码
-├── run_app.py       # 一键启动前后端脚本
-├── requirements.txt # Python依赖
-└── adbwatcher.service # 可选的 systemd 服务文件
-```
+### 第一步：安装 ADB 工具
 
-## 快速启动
+ADB Watcher 需要通过 ADB 与您的多珀播放器通信。请先安装 ADB 工具：
 
-### 0. 前提条件：安装 ADB (Android Debug Bridge)
+**Windows 用户：**
+1. 下载 [Android Platform Tools](https://developer.android.com/studio/releases/platform-tools)
+2. 解压到任意文件夹（如 `C:\adb`）
+3. 将 `C:\adb` 添加到系统环境变量 PATH 中
+4. 打开命令提示符，输入 `adb version` 验证安装
 
-在运行 ADB Watcher 之前，您需要在您的计算机（运行后端服务的机器）上安装 Android Debug Bridge (ADB) 命令行工具。ADB Watcher 后端服务会使用此工具与您的 Android 设备进行通信。
-
-**安装方法:**
-
-- **Linux:**
-  ```bash
-  # Debian/Ubuntu
-  sudo apt update
-  sudo apt install android-tools-adb
-
-  # Fedora
-  sudo dnf install android-tools
-
-  # Arch Linux
-  sudo pacman -S android-tools
-  ```
-  (请根据您的 Linux 发行版选择合适的命令)
-
-- **macOS:**
-  通常可以通过 Homebrew 安装:
-  ```bash
-  brew install --cask android-platform-tools
-  ```
-
-- **Windows:**
-  从官方 Android 开发者网站下载 SDK Platform Tools:
-  [https://developer.android.com/studio/releases/platform-tools](https://developer.android.com/studio/releases/platform-tools)
-  下载后解压，并将 `platform-tools` 目录添加到系统的 `PATH` 环境变量中。
-
-安装完成后，请打开终端或命令提示符，输入 `adb version` 并回车，确保 ADB 已正确安装并可以运行。
-
-### 1. 安装依赖
-
-#### 后端
-
+**macOS 用户：**
 ```bash
-pip install -r requirements.txt
+brew install --cask android-platform-tools
 ```
 
-#### 前端
-
+**Linux 用户：**
 ```bash
-cd frontend
-npm install
+# Ubuntu/Debian
+sudo apt update && sudo apt install android-tools-adb
+
+# CentOS/RHEL
+sudo yum install android-tools
 ```
 
-### 2. 启动项目
+### 第二步：启用多珀播放器的 ADB 调试
 
-在项目根目录下运行：
+1. 在多珀播放器上进入 **设置** → **关于本机**
+2. 连续点击 **版本号** 7次，启用开发者选项
+3. 返回设置，进入 **开发者选项**
+4. 开启 **USB 调试** 和 **网络调试**
+5. 记录下播放器的 IP 地址（在设置 → 网络中可以查看）
 
-```bash
-python run_app.py
-```
+### 第三步：安装 ADB Watcher
 
-- 后端服务默认监听 `7700` 端口，前端开发服务器监听 `7708` 端口。
-- 前端通过代理自动转发 API 请求到后端。
+1. 下载并解压 ADB Watcher
+2. 打开命令提示符，进入项目目录
+3. 安装依赖：
+   ```bash
+   pip install -r requirements.txt
+   cd frontend
+   npm install
+   ```
+4. 启动服务：
+   ```bash
+   python run_app.py
+   ```
 
-### 3. 访问前端
+### 第四步：配置
 
-浏览器访问 [http://localhost:7708](http://localhost:7708) 即可使用 Web 管理界面。
+打开浏览器访问：http://localhost:7708
+- 配置多珀播放器IP地址
+- 配置通知服务器IP地址（即BlurayPoster运行主机的IP地址）
+- 配置路径映射
 
-## 主要依赖
+**配置完成请重新 python run_app.py 重启程序**
 
-### 后端
+## 路径映射配置说明
 
-- FastAPI
-- Uvicorn
-- Pydantic
-- adb-shell
-- PyYAML
-- requests
+需要将多珀播放事件推送出来的源播放地址，转换成BlurayPoster可识别的路径。
+最简单的方法，是成功启动程序后，先尝试在多珀播放器上播放影片，前台日志区域会打印播放地址。
+记录下来之后，在路径映射中作相关配置。
 
-### 前端
+一般来说有如下规律：
 
-- Vue 3
-- Vuetify 3
-- Vite
-- Axios
+### 如果播放的是SMB共享
+在多珀海报墙中的源播放地址：
+content://com.doopoodigital.video.app/camera_photos/data/data/doopooexplorer/samba/<nas_ip>#<nas_share_name>/<path>/
+在多珀文件管理器中的源播放地址为：
+content://com.doopoodigital.file.app.fileProvider/root_path/data/data/doopooexplorer/samba/<nas_ip>#<nas_share_name>/<path>/
 
-## 配置说明
+### 如果播放的是多珀本地硬盘文件或者本地CD2挂载
+在多珀海报墙中的源播放地址：
+content://com.doopoodigital.video.app/camera_photos/storage/emulated/0/<path>/
+在多珀文件管理器中的源播放地址为：
+content://com.doopoodigital.file.app.fileProvider/externalstorage/<path>/
 
-- 后端配置文件位于 `backend/config/config.yaml`，可设置 ADB 设备ID、通知端点、日志等级等参数。
-- 前端支持通过界面动态修改部分配置。
+## 与 BlurayPoster 配合使用
 
-## 如何打开设备ADB权限
+ADB Watcher 需要配合 [BlurayPoster](https://github.com/narapeka/BlurayPoster) 使用才能实现自动播放功能。
 
-1. **打开开发者选项**：
-   - 在 Android 设备上，进入"设置" > "关于手机"，连续点击"版本号"7次，直到提示已进入开发者模式。
-2. **启用 USB 调试**：
-   - 返回"设置" > "系统" > "开发者选项"，找到并开启"USB 调试"。
-3. **授权调试**：
-   - 首次连接时，设备会弹出"是否允许 USB 调试"对话框，点击"允许"。
+请参考BlurayPoster项目说明，启用 media.file.Path 媒体库执行器。
 
-## 适用场景
-
-- 自动化测试与监控
-- 设备远程管理
-- 日志采集与事件通知
-
----
-
-如需更详细的功能说明或定制化开发，请查阅源码或联系开发者。 

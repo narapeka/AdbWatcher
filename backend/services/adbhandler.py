@@ -57,20 +57,33 @@ class ADBHandler:
         
         # Store device IP for reconnection attempts
         self.device_ip = None
-        self.device_port = "5555"  # Default ADB port
+        self.device_port = "5555"  # Fixed ADB port
         
-        if self.device_id and ':' in self.device_id:
-            # If device_id is in the format IP:PORT
-            parts = self.device_id.split(':')
-            try:
-                # Validate it's a proper IP address
-                ipaddress.ip_address(parts[0])
-                self.device_ip = parts[0]
-                self.device_port = parts[1] if len(parts) > 1 else "5555"
-            except ValueError:
-                # Not a valid IP
-                logger.error(f"Invalid IP address format: {parts[0]}")
-                self.device_ip = None
+        # Handle device_id which can be either IP:PORT or just IP
+        if self.device_id:
+            if ':' in self.device_id:
+                # If device_id is in the format IP:PORT
+                parts = self.device_id.split(':')
+                try:
+                    # Validate it's a proper IP address
+                    ipaddress.ip_address(parts[0])
+                    self.device_ip = parts[0]
+                    self.device_port = parts[1] if len(parts) > 1 else "5555"
+                except ValueError:
+                    # Not a valid IP
+                    logger.error(f"Invalid IP address format: {parts[0]}")
+                    self.device_ip = None
+            else:
+                # If device_id is just an IP address
+                try:
+                    # Validate it's a proper IP address
+                    ipaddress.ip_address(self.device_id)
+                    self.device_ip = self.device_id
+                    self.device_port = "5555"  # Use fixed port
+                except ValueError:
+                    # Not a valid IP
+                    logger.error(f"Invalid IP address format: {self.device_id}")
+                    self.device_ip = None
         
         # Connection state
         self.connected = False
@@ -115,7 +128,7 @@ class ADBHandler:
                     # Quick check to verify connection is responsive
                     result = subprocess.run(
                         ['adb', '-s', f"{self.device_ip}:{self.device_port}", 'shell', 'echo check'],
-                        timeout=timeout, capture_output=True, text=True, check=False
+                        timeout=timeout, capture_output=True, text=True, encoding='utf-8', errors='replace', check=False
                     )
                     if result.returncode == 0 and "check" in result.stdout:
                         # Connection is good, reset backoff
@@ -150,7 +163,7 @@ class ADBHandler:
                 # Connect the device
                 result = subprocess.run(
                     ['adb', 'connect', f"{self.device_ip}:{self.device_port}"], 
-                    timeout=timeout, capture_output=True, text=True
+                    timeout=timeout, capture_output=True, text=True, encoding='utf-8', errors='replace'
                 )
                 
                 if "connected" not in result.stdout.lower() and "already connected" not in result.stdout.lower():
@@ -166,7 +179,9 @@ class ADBHandler:
                      'while true; do echo ping; sleep 5; done'],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
                 )
                 
                 self.connected = True
@@ -209,7 +224,7 @@ class ADBHandler:
                     try:
                         result = subprocess.run(
                             ['adb', '-s', f"{self.device_ip}:{self.device_port}", 'shell', 'echo check'],
-                            timeout=2, capture_output=True, text=True, check=False
+                            timeout=2, capture_output=True, text=True, encoding='utf-8', errors='replace', check=False
                         )
                         if result.returncode == 0 and "check" in result.stdout:
                             self.connected = True
@@ -242,7 +257,7 @@ class ADBHandler:
         try:
             result = subprocess.run(
                 ['adb', '-s', f"{self.device_ip}:{self.device_port}", 'shell', cmd],
-                timeout=15, capture_output=True, text=True, check=False
+                timeout=15, capture_output=True, text=True, encoding='utf-8', errors='replace', check=False
             )
             if result.returncode == 0:
                 return result.stdout
@@ -258,9 +273,9 @@ class ADBHandler:
         """Restart ADB server"""
         logger.info("Restarting ADB server...")
         try:
-            subprocess.run(["adb", "kill-server"], timeout=5)
+            subprocess.run(["adb", "kill-server"], timeout=5, capture_output=True, text=True, encoding='utf-8', errors='replace')
             time.sleep(1)
-            subprocess.run(["adb", "start-server"], timeout=5)
+            subprocess.run(["adb", "start-server"], timeout=5, capture_output=True, text=True, encoding='utf-8', errors='replace')
             return True
         except Exception as e:
             logger.error(f"Failed to restart ADB: {str(e)}")
@@ -282,7 +297,7 @@ class ADBHandler:
             # Clear logcat buffer first 
             clear_result = subprocess.run(
                 ['adb', '-s', f"{self.device_ip}:{self.device_port}", 'logcat', '-c'],
-                timeout=5
+                timeout=5, capture_output=True, text=True, encoding='utf-8', errors='replace'
             )
             
             # Build the logcat command

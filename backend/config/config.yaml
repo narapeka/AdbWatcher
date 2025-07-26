@@ -1,22 +1,23 @@
 adb:
-  device_id: 192.168.1.88:5555
+  device_ip: 192.168.1.88
   logcat:
     buffer: system
     pattern: com.doopoodigital.dpplayer.app
     tags: ActivityTaskManager:I
 general:
+  cooldown_seconds: 3
   enable_watcher: true
-  log_level: "DEBUG"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  cooldown_seconds: 3  # Cooldown period to prevent duplicate events
+  log_level: DEBUG
 mapping_paths:
 - source: content://com.doopoodigital.video.app/camera_photos/data/data/doopooexplorer/samba/192.168.1.50#cloud/115/
-  target: cloud/115/
-- source: content://com.doopoodigital.video.app/camera_photos/storage/emulated/0/CloudDrive/115open/
-  target: CloudDrive/115open/
-- source: content://com.doopoodigital.file.app.fileProvider/externalstorage/CloudDrive/115open/
-  target: CloudDrive/115open/
+  target: /path1/
 - source: content://com.doopoodigital.file.app.fileProvider/root_path/data/data/doopooexplorer/samba/192.168.1.50#cloud/115/
-  target: cloud/115/
+  target: /path1/
+- source: content://com.doopoodigital.video.app/camera_photos/storage/emulated/0/CloudDrive/115open/
+  target: /path2/
+- source: content://com.doopoodigital.file.app.fileProvider/externalstorage/CloudDrive/115open/
+  target: /path2/
+
 notification:
-  endpoint: null
+  endpoint: http://192.168.1.50:7507/play
   timeout_seconds: 10

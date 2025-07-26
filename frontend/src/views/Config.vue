@@ -68,12 +68,12 @@
               ></v-alert>
               
               <v-text-field
-                v-model="config.adb.device_id"
-                label="ADB 设备 ID"
-                hint="设备 ID、IP:PORT，或留空使用第一个可用设备"
+                v-model="config.adb.device_ip"
+                label="ADB 设备 IP"
+                hint="设备 IP 地址（端口固定为 5555）"
                 variant="outlined"
                 class="mb-4"
-                :rules="[deviceIdRule]"
+                :rules="[deviceIpRule]"
               ></v-text-field>
               
               <v-text-field
@@ -105,31 +105,18 @@
           <!-- Notification Tab -->
           <v-window-item value="notification">
             <v-form @submit.prevent>
-              <div class="d-flex align-center justify-space-between mb-4 mt-8">
+              <div class="d-flex align-center mb-4 mt-8">
                 <h3 class="text-h6">通知设置</h3>
-                <v-btn 
-                  color="primary" 
-                  @click="testNotificationEndpoint"
-                  :loading="testEndpoint.loading"
-                  :disabled="!config.notification.endpoint"
-                >
-                  测试端点
-                </v-btn>
               </div>
               
-              <v-alert
-                v-if="testEndpoint.result"
-                :type="testEndpoint.result.status === 'success' ? 'success' : 'error'"
-                :text="testEndpoint.result.message"
-                class="mb-4"
-              ></v-alert>
               
               <v-text-field
-                v-model="config.notification.endpoint"
-                label="通知端点"
-                hint="视频播放时通知的 HTTP 端点（留空禁用通知）"
+                v-model="config.notification.ip"
+                label="通知服务器IP"
+                hint="通知服务器的IP地址（系统将自动添加 http://IP:7507/play）"
                 variant="outlined"
                 class="mb-4"
+                :rules="[ipRule]"
               ></v-text-field>
               
               <v-text-field
@@ -230,7 +217,7 @@ export default {
           enable_watcher: true
         },
         adb: {
-          device_id: null,
+          device_ip: null,
           logcat: {
             pattern: '',
             buffer: 'system',
@@ -238,7 +225,7 @@ export default {
           }
         },
         notification: {
-          endpoint: null,
+          ip: null,
           timeout_seconds: 10
         },
         logging: {
@@ -262,25 +249,36 @@ export default {
         loading: false,
         result: null
       },
-      testEndpoint: {
-        loading: false,
-        result: null
-      }
+
     }
   },
   async mounted() {
     await this.loadConfig()
   },
   methods: {
-    deviceIdRule(value) {
+    deviceIpRule(value) {
       if (!value) return true // Allow empty value
-      const ipPortRegex = /^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$/
-      return ipPortRegex.test(value) || '请输入有效的IP地址格式 (例如: 192.168.1.100 或 192.168.1.100:5555)'
+      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
+      return ipRegex.test(value) || '请输入有效的IP地址格式 (例如: 192.168.1.100)'
+    },
+    ipRule(value) {
+      if (!value) return true // Allow empty value
+      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
+      return ipRegex.test(value) || '请输入有效的IP地址格式 (例如: 192.168.1.100)'
     },
     async loadConfig() {
       try {
         const response = await api.getConfig()
         this.config = response.data.config
+        
+        // Extract IP from endpoint URL for display
+        if (this.config.notification && this.config.notification.endpoint) {
+          const url = this.config.notification.endpoint
+          const match = url.match(/http:\/\/([^:]+):\d+\/play/)
+          if (match) {
+            this.config.notification.ip = match[1]
+          }
+        }
         
         // Store original config for reset functionality
         this.originalConfig = JSON.parse(JSON.stringify(this.config))
@@ -298,7 +296,14 @@ export default {
     async saveConfig() {
       this.saving = true
       try {
-        const response = await api.updateConfig(this.config)
+        // Convert IP to full endpoint URL before saving
+        const configToSave = JSON.parse(JSON.stringify(this.config))
+        if (configToSave.notification.ip) {
+          configToSave.notification.endpoint = `http://${configToSave.notification.ip}:7507/play`
+          delete configToSave.notification.ip // Remove IP from saved config
+        }
+        
+        const response = await api.updateConfig(configToSave)
         if (response.data.success) {
           this.showAlert('success', 'Configuration saved successfully')
           // Update the original config
@@ -366,16 +371,19 @@ export default {
       this.testAdb.result = null
       
       try {
-        const deviceId = this.config.adb.device_id || null
+        const deviceIp = this.config.adb.device_ip || null
         
-        // Validate device ID format if provided
-        if (deviceId && !this.deviceIdRule(deviceId)) {
+        // Validate device IP format if provided
+        if (deviceIp && !this.deviceIpRule(deviceIp)) {
           this.testAdb.result = {
             status: 'error',
-            message: '无效的IP地址格式，请使用 IP 或 IP:PORT 格式 (例如: 192.168.1.100 或 192.168.1.100:5555)'
+            message: '无效的IP地址格式，请使用有效的IP地址 (例如: 192.168.1.100)'
           }
           return
         }
+        
+        // Construct device_id from IP and fixed port
+        const deviceId = deviceIp ? `${deviceIp}:5555` : null
         
         const response = await api.testAdbConnection(deviceId)
         this.testAdb.result = response.data
@@ -390,23 +398,7 @@ export default {
       }
     },
     
-    async testNotificationEndpoint() {
-      this.testEndpoint.loading = true
-      this.testEndpoint.result = null
-      
-      try {
-        const response = await api.testEndpoint(this.config.notification.endpoint)
-        this.testEndpoint.result = response.data
-      } catch (error) {
-        console.error('Error testing endpoint:', error)
-        this.testEndpoint.result = {
-          status: 'error',
-          message: 'Error testing endpoint: ' + (error.response?.data?.message || error.message)
-        }
-      } finally {
-        this.testEndpoint.loading = false
-      }
-    }
+
   }
 }
 </script>

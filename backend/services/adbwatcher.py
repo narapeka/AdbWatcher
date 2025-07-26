@@ -320,6 +320,10 @@ class ADBWatcher:
                     # Process the log line
                     self._process_logcat_entry(line)
                         
+                except UnicodeDecodeError as e:
+                    logger.error(f"Unicode decode error reading logcat line: {str(e)}")
+                    # Continue processing other lines
+                    continue
                 except Exception as e:
                     logger.error(f"Error reading logcat line: {str(e)}")
         except Exception as e:
@@ -329,6 +333,16 @@ class ADBWatcher:
 
     def _process_logcat_entry(self, line):
         """Process a log line from the device"""
+        # Ensure line is properly decoded
+        try:
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', errors='replace')
+            elif not isinstance(line, str):
+                line = str(line)
+        except Exception as e:
+            logger.error(f"Error decoding log line: {str(e)}")
+            return
+        
         # Add to buffer
         try:
             self.log_buffer.put_nowait(line)
@@ -364,7 +378,8 @@ class ADBWatcher:
                         notification_success = send_http_notification(
                             self.config.notification_endpoint, 
                             video_path, 
-                            timeout=self.config.notification_timeout
+                            timeout=self.config.notification_timeout,
+                            device_ip=self.config.adb_device_ip
                         )
                         # Update the notification status in the filtered log
                         if self.filtered_logs:

@@ -80,7 +80,5 @@ export default {
     return api.post('/test/adb', params)
   },
 
-  testEndpoint(endpoint) {
-    return api.post('/test/endpoint', { endpoint })
-  }
+
 } 

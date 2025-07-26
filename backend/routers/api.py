@@ -31,12 +31,7 @@ class TestADBResponse(BaseModel):
     message: str
     device_id: Optional[str] = None
 
-class TestEndpointRequest(BaseModel):
-    endpoint: str
 
-class TestEndpointResponse(BaseModel):
-    status: str
-    message: str
 
 class CommandResponse(BaseModel):
     success: bool
@@ -155,47 +150,26 @@ async def test_adb_connection(device_id: Optional[str] = None):
     """Test ADB connection"""
     # Validate device_id format if provided
     if device_id:
-        ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}(:\d{1,5})?$')
-        if not ip_pattern.match(device_id):
-            return {
-                "status": "error",
-                "message": "Invalid IP format. Please use IP:PORT format (e.g., 192.168.1.100:5555)",
-                "device_id": None
-            }
+        # Check if it's in IP:PORT format
+        if ':' in device_id:
+            ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$')
+            if not ip_pattern.match(device_id):
+                return {
+                    "status": "error",
+                    "message": "Invalid IP:PORT format. Please use format like 192.168.1.100:5555",
+                    "device_id": None
+                }
+        else:
+            # Just IP address
+            ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+            if not ip_pattern.match(device_id):
+                return {
+                    "status": "error",
+                    "message": "Invalid IP format. Please use format like 192.168.1.100",
+                    "device_id": None
+                }
     
     handler = ADBHandler.get_instance(device_id)
     return handler.test_adb_connection()
 
-@router.post("/test/endpoint", response_model=TestEndpointResponse)
-async def test_endpoint(request: TestEndpointRequest):
-    """Test notification endpoint"""
-    import requests
-    
-    try:
-        payload = {"test": True}
-        headers = {'Content-Type': 'application/json'}
-        
-        logger.info(f"Testing endpoint: {request.endpoint}")
-        response = requests.post(
-            request.endpoint,
-            json=payload,
-            headers=headers,
-            timeout=10
-        )
-        
-        if response.status_code >= 200 and response.status_code < 300:
-            return {
-                "status": "success",
-                "message": f"Endpoint test successful: HTTP {response.status_code}"
-            }
-        else:
-            return {
-                "status": "error",
-                "message": f"Endpoint test failed: HTTP {response.status_code}"
-            }
-    except Exception as e:
-        logger.error(f"Error testing endpoint: {str(e)}")
-        return {
-            "status": "error",
-            "message": f"Error testing endpoint: {str(e)}"
-        } 
+ 
